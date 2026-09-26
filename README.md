@@ -10,3 +10,6 @@
 - Truck tracker (ETA, quality per truck, water quality sensors in tanks) -> airtag idea
 - Water quality updates, pinging other phones/devices that recently updated in case of connectivity lack
 - Simple app UI for people, as they have phones
+123
+
+213
