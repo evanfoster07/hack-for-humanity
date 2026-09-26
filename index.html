@@ -1,249 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>Water Truck Tracker</title>
-
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Water Truck Tracker · Inukjuak</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
-  <div id="device-preview" class="device-preview">
-  <header class="topbar">
-    <div class="brand">
-      <span class="brand-mark">W</span>
-
-      <div>
-        <p class="eyebrow">COMMUNITY WATER SERVICES</p>
-        <h1>Water Truck Tracker</h1>
-      </div>
-    </div>
-
-    <div class="live-status">
-      <span class="live-dot"></span>
-      <span>Live simulation</span>
-    </div>
-  </header>
-
+<div id="device-preview" class="device-preview">
+  <header class="topbar"><div class="brand"><span class="brand-mark">W</span><div><span class="eyebrow">INUKJUAK · NUNAVIK</span><h1>Your water delivery</h1></div></div><span class="demo-pill">Demo</span></header>
   <main class="app">
-
     <aside class="sidebar">
-
-      <section class="location-strip">
-        <div class="location-icon">⌖</div>
-
-        <div>
-          <span class="label">DEMO SERVICE AREA</span>
-          <h2 id="location-name">Inukjuak, Nunavik</h2>
-          <p id="location-message">
-            Sample household · Northern Québec
-          </p>
-        </div>
-      </section>
-
-      <section class="household-panel">
-        <span class="label">AT HOME · DEMO STATUS</span>
-        <h2>Household check needed</h2>
-        <p>A truck reading is only one part of the journey. Your tank and tap have no recent sample in this demo.</p>
-        <div class="tank-level"><strong>Tank level: 35%</strong><span>Simulated reading</span></div>
-        <progress value="35" max="100" aria-label="Demo household tank level, 35 percent"></progress>
-        <p>Next step: request a tank and tap check from the local water team.</p>
-        <details><summary>From treatment to your tap</summary>
-          <ol class="water-journey">
-            <li><strong>Source & treatment</strong><span>No facility report connected</span></li>
-            <li><strong>Water truck</strong><span>Select a truck to see its sample</span></li>
-            <li><strong>Household tank</strong><span>Sample needed · level shown above</span></li>
-            <li><strong>Your tap</strong><span>Sample needed · status unknown</span></li>
-          </ol>
-        </details>
-      </section>
-
-      <section class="next-delivery">
-        <div class="section-top">
-          <span class="label">NEAREST DEMO TRUCK</span>
-          <span class="route-live">
-            <span></span>
-            ESTIMATE
-          </span>
-        </div>
-
-        <div class="eta-row">
-          <div>
-            <div id="next-eta" class="big-number">--</div>
-            <div class="eta-unit">minutes</div>
-          </div>
-
-          <div class="next-info">
-            <span id="next-truck">Finding nearest truck</span>
-            <small id="next-distance">-- away</small>
-          </div>
-        </div>
-      </section>
-
-      <section class="truck-section">
-
-        <div class="section-header">
-          <div>
-            <span class="label">DELIVERIES</span>
-            <h2>Active trucks</h2>
-          </div>
-
-          <button id="toggle-simulation" class="pause-button">
-            Pause
-          </button>
-        </div>
-
-        <div id="truck-list" class="truck-list"></div>
-
-      </section>
-
-      <section class="connection-panel">
-        <span class="label">DESIGNED FOR LIMITED CONNECTIVITY</span>
-        <p id="connection-status" role="status">Demo data on this device; no live service connected.</p>
-        <button id="toggle-map" class="pause-button" aria-pressed="false">Use text-only view</button>
-        <p>All readings and positions are simulated. No current advisory feed is connected.</p>
-      </section>
-
+      <nav class="tabs" aria-label="Water service"><button id="delivery-tab" aria-pressed="true" aria-controls="delivery-panel">Delivery</button><button id="alerts-tab" aria-pressed="false" aria-controls="alerts-panel">Alerts <span id="alert-count">0</span></button></nav>
+      <div id="delivery-panel">
+        <section class="card location-card"><span class="label">DELIVER TO</span><h2 id="location-name">Sample home · Inukjuak</h2><button id="choose-location" class="secondary">Choose on map</button><p id="route-message" role="status">Loading local roads…</p></section>
+        <section class="card arrival-card"><span class="label">EXPECT WATER IN</span><h2 id="next-eta" class="big-number">—</h2><p id="arrival-window">Finding your next delivery</p><p id="next-truck" class="muted"></p><div id="delivery-quality" class="quality-indicator unknown">? Quality not confirmed</div><button id="next-details" class="text-button">View water quality details</button></section>
+        <section class="card"><div class="section-header"><h2>Closest trucks</h2><button id="toggle-simulation" class="text-button">Pause</button></div><div id="truck-list"></div></section>
+      </div>
+      <div id="alerts-panel" hidden><section class="card"><span class="label">SERVICE UPDATES</span><h2>Alerts & emergencies</h2><p class="muted">Demo events only · no live emergency feed.</p><div id="alert-list" aria-live="polite"></div></section></div>
+      <details class="demo-settings"><summary>Demo controls</summary><label for="scenario">Try a service update</label><select id="scenario"><option value="delay">Delivery delay</option><option value="normal">Normal service</option><option value="crash">Truck collision</option><option value="quality">Water quality recheck</option></select><button id="reset-demo" class="secondary">Restart demo</button><button id="toggle-map" class="text-button" aria-pressed="false">Use text-only view</button><p id="connection-status" class="muted"></p></details>
     </aside>
-
-    <section class="map-panel">
-
-      <div id="map"></div>
-
-      <div class="map-controls">
-        <button id="reset-map" title="Reset map view">⌂</button>
-      </div>
-
-      <div class="map-label">
-        <strong>Inukjuak</strong>
-        <span>Water delivery network</span>
-      </div>
-
-      <div class="legend">
-        <div>
-          <i class="legend-dot home"></i>
-          Service point
-        </div>
-
-        <div>
-          <span aria-hidden="true">🚚</span>
-          Simulated truck
-        </div>
-      </div>
-
-      <article id="truck-detail" class="truck-detail">
-
-        <button id="close-detail" class="close-button" aria-label="Close truck details">×</button>
-
-        <div class="detail-header">
-
-          <div>
-            <span class="label">DELIVERY TRUCK</span>
-            <h2 id="detail-name">Truck</h2>
-            <span id="detail-id" class="truck-id">Simulated truck sample</span>
-          </div>
-
-          <span id="detail-status" class="quality-badge">
-            --
-          </span>
-
-        </div>
-
-        <div class="detail-grid">
-
-          <div>
-            <span>Arrival</span>
-            <strong id="detail-eta">--</strong>
-          </div>
-
-          <div>
-            <span>Distance</span>
-            <strong id="detail-distance">--</strong>
-          </div>
-
-          <div>
-            <span>Driver</span>
-            <strong id="detail-driver">--</strong>
-          </div>
-
-          <div>
-            <span>Last sample</span>
-            <strong id="detail-sampled">--</strong>
-          </div>
-
-        </div>
-
-        <div class="quality-panel">
-
-          <div class="quality-header">
-            <div>
-              <span class="label">WATER QUALITY</span>
-              <h3 id="quality-summary">--</h3>
-            </div>
-
-            <div class="quality-check" id="quality-icon">
-              ?
-            </div>
-          </div>
-
-          <div class="reading-grid">
-
-            <div>
-              <span>pH</span>
-              <strong id="reading-ph">--</strong>
-            </div>
-
-            <div>
-              <span>Turbidity</span>
-              <strong id="reading-turbidity">--</strong>
-            </div>
-
-            <div>
-              <span>Chlorine</span>
-              <strong id="reading-chlorine">--</strong>
-            </div>
-
-            <div>
-              <span>Temperature</span>
-              <strong id="reading-temp">--</strong>
-            </div>
-
-          </div>
-
-          <p>
-            Demo sensor readings do not establish drinking-water safety.
-            Household tank and tap checks are separate from the truck sample.
-          </p>
-
-        </div>
-
-      </article>
-
-    </section>
-
+    <section class="map-panel" aria-label="Delivery map"><div id="map"></div><div class="map-hint">Tap the map or drag your home pin</div><button id="reset-map" class="map-reset" aria-label="Show all trucks">⌖</button><div class="map-key">⌂ Your home · 🚚 Truck · ◆ Treatment plant</div></section>
   </main>
-
-  <footer>
-    Inukjuak concept · Simulated data · Inspired by the H4H household water challenge
-  </footer>
-  </div>
-
-  <nav class="view-switcher" aria-label="Preview device">
-    <span id="preview-label" role="status">Laptop preview</span>
-    <div class="view-options">
-      <button type="button" id="laptop-view" aria-pressed="true" aria-controls="device-preview">Laptop</button>
-      <button type="button" id="iphone-view" aria-pressed="false" aria-controls="device-preview">iPhone</button>
-    </div>
-  </nav>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="app.js"></script>
+  <footer>Simulated deliveries & quality · Roads © OpenStreetMap contributors</footer>
+  <dialog id="truck-detail" aria-labelledby="detail-title"><div class="section-header"><div><span class="label">TRUCK DETAILS</span><h2 id="detail-title"></h2></div><button id="close-detail" aria-label="Close details">×</button></div><p id="detail-arrival"></p><div id="detail-quality" class="quality-indicator"></div><p id="detail-action"></p><details><summary>Water sample readings</summary><div id="readings" class="readings"></div><p class="muted">Illustrative truck sample. Tank and tap quality at home remain unconfirmed. These readings do not establish drinking-water safety.</p></details><details><summary>Delivery route & source</summary><p id="detail-route"></p><p class="muted">Road travel plus scheduled demo stops and delays. Not a confirmed booking or live dispatch estimate.</p></details></dialog>
+</div>
+<nav class="view-switcher" aria-label="Preview device"><span id="preview-label" role="status">Laptop preview</span><div class="view-options"><button id="laptop-view" aria-pressed="true">Laptop</button><button id="iphone-view" aria-pressed="false">iPhone</button></div></nav>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="routing.js"></script><script src="delivery.js"></script><script src="app.js"></script>
 </body>
 </html>
