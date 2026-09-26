@@ -17,3 +17,6 @@
 
 ## Run Command
 - python -m http.server 800
+
+## Web Address
+- http://localhost:8000/
