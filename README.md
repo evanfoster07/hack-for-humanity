@@ -11,7 +11,6 @@ Equip water trucks with GPS trackers and tank-mounted water-quality sensors. Giv
 - Offline estimates: Save the last update, then estimate progress along the known route. Show the update's age, a red offline dot and a dashed predicted path. Replace estimates when new data arrives.
 - Nearby-device sharing: Eventually let another device share its latest timestamped report over Bluetooth. The button is only a placeholder today.
 
-GPS tells us where a truck is, not whether water is flowing. Truck sensors report on the truck's water, not the household tank. Old readings must never look like fresh ones.
 
 ## What we've built
 
