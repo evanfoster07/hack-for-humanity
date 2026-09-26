@@ -8,9 +8,10 @@ function timeLabel(ms){return new Date(ms).toLocaleTimeString([], {hour:'numeric
 const map=typeof L!=='undefined'?L.map('map',{zoomControl:false}).setView([58.46,-78.105],14):null;
 const markers=new Map(), routeLines=new Map();
 let homeMarker;
+let locationEditing=false;
 if(map) {
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
-  homeMarker=L.marker([home.lat,home.lng],{draggable:true,icon:L.divIcon({className:'home-marker',html:'⌂',iconSize:[34,34]})}).addTo(map).bindTooltip('Your delivery location');
+  homeMarker=L.marker([home.lat,home.lng],{draggable:false,icon:L.divIcon({className:'home-marker',html:'⌂',iconSize:[34,34]})}).addTo(map).bindTooltip('Your delivery location');
   L.marker([PLANT.lat,PLANT.lng],{icon:L.divIcon({className:'plant-marker',html:'◆',iconSize:[28,28]})}).addTo(map).bindPopup('<strong>Inukjuak Water Treatment Plant</strong><br>Real mapped facility · simulated departures');
   L.marker([INTAKE.lat,INTAKE.lng],{icon:L.divIcon({className:'intake-marker',html:'≈',iconSize:[28,28]})}).addTo(map).bindPopup('<strong>Innuksuac River intake</strong><br>Raw water is pumped through a 3 km heated pipeline to the treatment plant. No truck stop or live process timing.');
   for(const truck of trucks) {
@@ -90,15 +91,25 @@ function renderDetails() {
   $('detail-route').textContent=`${PLANT.name} → ${t.round} household → ${t.assigned?'your tank':'community tank'} → plant. Loading: ${t.loadMinutes} min; round stop: ${t.fillMinutes} min; your tank: 8 min. All dwell durations are assumptions. ${metrics(t)?distance(metrics(t).distanceKm)+' road travel before its assigned delivery.':''}`;
 }
 function showDetails(id) {selectedId=id;renderDetails();render();$('truck-detail').showModal();}
+function setLocationEditing(enabled) {
+  locationEditing=enabled;
+  if(enabled)homeMarker?.dragging?.enable();else homeMarker?.dragging?.disable();
+  $('choose-location').textContent=enabled?'Cancel location change':'Choose on map';
+  $('choose-location').setAttribute('aria-pressed',String(enabled));
+  $('map-hint').textContent=enabled?'Choose once: tap the map or drag your home pin':'Home locked · use “Choose on map” to change it';
+  document.body.classList.toggle('choosing-location',enabled);
+}
 function setHome(lat,lng) {
   if(offlineActive){homeMarker?.setLatLng([home.lat,home.lng]);$('route-message').textContent='Reconnect to change your delivery pin. Offline forecasts follow the last known route.';return;}
+  if(!locationEditing){homeMarker?.setLatLng([home.lat,home.lng]);return;}
   if(!router){$('route-message').textContent='Roads are still loading. Please try again.';return;}
+  setLocationEditing(false);
   home={lat,lng};homeMarker?.setLatLng([lat,lng]);
   $('location-name').textContent='Your selected location';
   for(const t of trucks)planRoute(router,t,home);
   assignDelivery();
   const route=eligible().map(metrics).find(Boolean);
-  $('route-message').textContent=route?`Location updated${route.endSnapMetres>8?` · delivery stops ${Math.round(route.endSnapMetres)} m away at the road`:''}.`:'No road access here. Choose a location closer to an Inukjuak road.';
+  $('route-message').textContent=route?`Home locked${route.endSnapMetres>8?` · delivery stops ${Math.round(route.endSnapMetres)} m away at the road`:''}.`:'Home locked, but no road access here. Use Choose on map to select a location nearer a road.';
   render();
 }
 function setTab(alerts) {$('delivery-panel').hidden=alerts;$('alerts-panel').hidden=!alerts;$('delivery-tab').setAttribute('aria-pressed',String(!alerts));$('alerts-tab').setAttribute('aria-pressed',String(alerts));}
@@ -128,20 +139,25 @@ function initialize() {
   trucks=createTrucks();
   for(const t of trucks)planRoute(router,t,home);
   initialDemoTime=demoTime;lastOnlineTime=demoTime;
-  applyScenario();$('route-message').textContent='Tap the map to change your delivery location.';fitMap();
+  setLocationEditing(false);applyScenario();$('route-message').textContent='Home locked. Use Choose on map to select a different location.';fitMap();
 }
 $('delivery-tab').addEventListener('click',()=>setTab(false));$('alerts-tab').addEventListener('click',()=>setTab(true));
 $('close-detail').addEventListener('click',()=>$('truck-detail').close());
 $('next-details').addEventListener('click',()=>{const t=eligible()[0];if(t)showDetails(t.id)});
 $('choose-location').addEventListener('click',()=>{
+  if(locationEditing){setLocationEditing(false);$('route-message').textContent='Location change cancelled. Home remains locked.';return;}
+  if(offlineActive){$('route-message').textContent='Reconnect before changing your delivery location.';return;}
+  if(!router){$('route-message').textContent='Roads are still loading. Please try again.';return;}
   if(!map){$('route-message').textContent='Map unavailable. Connect to the internet and refresh to choose a location.';return;}
   document.body.classList.remove('text-view');$('toggle-map').setAttribute('aria-pressed','false');$('toggle-map').textContent='Use text-only view';
-  map.invalidateSize();$('map').scrollIntoView({behavior:'smooth',block:'center'});$('route-message').textContent='Tap a road on the map or drag the home pin.';
+  setLocationEditing(true);
+  map.invalidateSize();$('map').scrollIntoView({behavior:'smooth',block:'center'});$('route-message').textContent='Tap once on the map or drag the home pin. Your selection will lock automatically.';
 });
 $('toggle-simulation').addEventListener('click',()=>{running=!running;$('toggle-simulation').textContent=running?'Pause':'Resume';render()});
 $('scenario').addEventListener('change',e=>{scenario=e.target.value;applyScenario()});
-$('reset-demo').addEventListener('click',()=>{if(!router||offlineActive)return;home={...HOME};homeMarker?.setLatLng([home.lat,home.lng]);$('location-name').textContent='Sample home · Inukjuak';initialize()});
+$('reset-demo').addEventListener('click',()=>{if(!router||offlineActive)return;initialize()});
 $('reset-map').addEventListener('click',fitMap);
+window.addEventListener('keydown',event=>{if(event.key==='Escape'&&locationEditing){setLocationEditing(false);$('route-message').textContent='Location change cancelled. Home remains locked.';}});
 $('toggle-map').addEventListener('click',()=>{const on=document.body.classList.toggle('text-view');$('toggle-map').setAttribute('aria-pressed',String(on));$('toggle-map').textContent=on?'Show map':'Use text-only view';map?.invalidateSize()});
 function setPreview(phone){document.body.classList.toggle('iphone-preview',phone);$('laptop-view').setAttribute('aria-pressed',String(!phone));$('iphone-view').setAttribute('aria-pressed',String(phone));$('preview-label').textContent=phone?'iPhone preview · 390px':'Laptop preview';requestAnimationFrame(()=>map?.invalidateSize({pan:false}));}
 $('laptop-view').addEventListener('click',()=>setPreview(false));$('iphone-view').addEventListener('click',()=>setPreview(true));
@@ -151,6 +167,7 @@ function setOfflineMode(){
   const offline=offlineDemo||!navigator.onLine;
   if(offline===offlineActive)return;
   offlineActive=offline;
+  setLocationEditing(false);
   if(offline){lastOnlineTime=demoTime;offlineSnapshot=cloneFleet(trucks);onlineFleet=trucks;trucks=cloneFleet(offlineSnapshot);}
   else {if(onlineFleet)trucks=onlineFleet;onlineFleet=null;offlineSnapshot=null;for(const t of trucks)if(router)planRoute(router,t,home);lastOnlineTime=demoTime;assignDelivery();renderAlerts();}
   document.body.classList.toggle('offline-demo',offline);

@@ -42,3 +42,18 @@ test('safe/unsafe demo labels and offline last-update disclosure are explicit',a
  run("scenario='quality';applyScenario();showDetails('WT-218');");assert.match(e.get('detail-quality').innerHTML,/Unsafe/);assert.match(e.get('detail-quality').className,/quality-unsafe/);
  e.get('offline-demo').handlers.click();assert.match(e.get('detail-quality').innerHTML,/status-dot offline/);assert.match(e.get('detail-quality').innerHTML,/based on the last update/);
 });
+test('home stays locked until selection is enabled and locks after exactly one update',async()=>{
+ const {elements:e,run}=await app();const initial=run('JSON.stringify(home)');
+ run('setHome(58.462,-78.101)');assert.equal(run('JSON.stringify(home)'),initial);
+ run('setLocationEditing(true);setHome(58.462,-78.101)');
+ assert.equal(run('locationEditing'),false);assert.equal(run('home.lat'),58.462);assert.equal(e.get('choose-location').attributes['aria-pressed'],'false');
+ run('setHome(58.454,-78.105)');assert.equal(run('home.lat'),58.462);
+ e.get('reset-demo').handlers.click();assert.equal(run('home.lat'),58.462);assert.equal(run('locationEditing'),false);
+});
+test('cancel and offline mode revoke permission to move the home',async()=>{
+ const {elements:e,run}=await app();const initial=run('JSON.stringify(home)');
+ run('setLocationEditing(true)');e.get('choose-location').handlers.click();assert.equal(run('locationEditing'),false);
+ run('setHome(58.462,-78.101)');assert.equal(run('JSON.stringify(home)'),initial);
+ run('setLocationEditing(true)');e.get('offline-demo').handlers.click();assert.equal(run('locationEditing'),false);
+ e.get('offline-demo').handlers.click();run('setHome(58.462,-78.101)');assert.equal(run('JSON.stringify(home)'),initial);
+});

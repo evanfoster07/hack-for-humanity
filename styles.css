@@ -37,3 +37,6 @@ button:disabled { cursor:not-allowed; opacity:.5; }
   .connection-toggle { min-width:98px; }
 }
 .assigned-truck { border-color:#14718a; box-shadow:0 0 0 5px #14718a30; }
+.choosing-location #map { cursor:crosshair; }
+.choosing-location .map-hint { background:#e3f4f8; border:1px solid #14718a; }
+#choose-location[aria-pressed=true] { background:#183341; color:white; }
