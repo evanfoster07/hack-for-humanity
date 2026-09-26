@@ -18,3 +18,22 @@
 .intake-marker { background:#14718a; color:white; border:2px solid white; border-radius:50%; text-align:center; font-size:20px; }
 button:disabled { cursor:not-allowed; opacity:.5; }
 .truck-card-bottom strong { flex-shrink:0; }
+/* Quality classifications are explicit demo states, separate from connectivity. */
+.quality-safe { background:#dff3e4; color:#155c32; border:1px solid #a8d5b5; }
+.quality-unsafe { background:#ffead0; color:#874009; border:1px solid #edba79; }
+.quality-title { display:flex; align-items:center; gap:8px; font-size:16px; }
+.quality-demo { margin-left:auto; font-size:9px; letter-spacing:.06em; font-weight:600; }
+.quality-indicator small { display:block; font-size:11px; line-height:1.5; margin-top:8px; font-weight:400; }
+.status-dot { display:inline-block; width:9px; height:9px; flex-shrink:0; border-radius:50%; background:#26834d; }
+.status-dot.offline { background:#cf302f; box-shadow:0 0 0 3px #cf302f18; }
+.quality-unsafe .status-dot:not(.offline) { background:#bf6817; }
+.connection-toggle { display:flex; align-items:center; justify-content:center; gap:8px; background:#edf4f0; color:#174d2b; border:1px solid #cbded0; min-width:106px; font-size:12px; }
+.connection-toggle[aria-pressed=true] { color:#97312d; background:#fff0ec; border-color:#e9b8b2; }
+.demo-pill { display:flex; align-items:center; gap:7px; }
+@media (max-width:600px) {
+  .view-switcher { gap:8px; }
+  .view-switcher > #preview-label { display:none; }
+  .view-options button { min-width:70px; }
+  .connection-toggle { min-width:98px; }
+}
+.assigned-truck { border-color:#14718a; box-shadow:0 0 0 5px #14718a30; }

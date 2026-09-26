@@ -4,6 +4,7 @@
   const INTAKE = {lat:58+28/60+1.36/3600,lng:-(78+4/60+3.94/3600),name:'Innuksuac River intake'};
   const HOME = {lat:58.4479229,lng:-78.1071254};
   const point=(lat,lng)=>({lat,lng});
+  const householdLabel=t=>t.assigned?'Your household':`${t.round} community tank`;
   const travel=(to,label,extra={})=>({type:'travel',to:{...to},label,...extra});
   const dwell=(at,stage,minutes,label,extra={})=>({type:'dwell',to:{...at},stage,durationSeconds:minutes*60,elapsedSeconds:0,label,...extra});
   function createTrucks() {
@@ -14,10 +15,10 @@
       {id:'WT-406',round:'Central village',stop:point(58.462,-78.101),start:'returning',loadMinutes:30,fillMinutes:6,seedSeconds:35},
       {id:'WT-512',round:'Southwest village',stop:point(58.451,-78.113),start:'delivering',loadMinutes:28,fillMinutes:10,seedSeconds:4*60},
       {id:'WT-629',round:'North village',stop:point(58.468,-78.100),start:'waiting',loadMinutes:32,fillMinutes:9,seedSeconds:0}
-    ].map((t,i)=>({...t,shiftOffsetHours:i*2,lat:PLANT.lat,lng:PLANT.lng,quality:'good',readings:['7.2','0.4 NTU','0.7 mg/L','7.5 °C'],jobs:[],home:{...HOME},router:null,delaySeconds:0,blocked:false,stationarySeconds:0,simulationSeconds:0,history:[],completedRounds:0,initialized:false}));
+    ].map((t,i)=>({...t,assigned:t.id==='WT-512',communityHome:[point(58.453,-78.108),point(58.469,-78.097),point(58.458,-78.116),point(58.459,-78.101),point(58.450,-78.109),point(58.465,-78.099)][i],shiftOffsetHours:i*2,lat:PLANT.lat,lng:PLANT.lng,quality:'good',readings:['7.2','0.4 NTU','0.7 mg/L','7.5 °C'],jobs:[],home:{...HOME},router:null,delaySeconds:0,blocked:false,stationarySeconds:0,simulationSeconds:0,history:[],completedRounds:0,initialized:false}));
   }
   function deliveryJobs(t,home) {
-    return [travel(t.stop,`${t.round} household`),dwell(t.stop,'delivering',t.fillMinutes,`${t.round} household`),travel(home,'Your household',{homeTarget:true}),dwell(home,'delivering',8,'Your household',{isHome:true}),travel(PLANT,PLANT.name,{returning:true})];
+    return [travel(t.stop,`${t.round} household`),dwell(t.stop,'delivering',t.fillMinutes,`${t.round} household`),travel(home,householdLabel(t),{homeTarget:true}),dwell(home,'delivering',8,householdLabel(t),{isHome:true}),travel(PLANT,PLANT.name,{returning:true})];
   }
   function cycleJobs(t,home) {
     return [dwell(PLANT,'waiting',10,'Plant dispatch queue'),dwell(PLANT,'loading',t.loadMinutes,PLANT.name),...deliveryJobs(t,home)];
@@ -37,6 +38,7 @@
     return jobs;
   }
   function planRoute(router,t,home) {
+    home=t.assigned?home:t.communityHome;
     t.router=router;t.home={...home};
     if(!t.initialized) {
       let jobs;
@@ -44,7 +46,7 @@
       else if(t.start==='outbound')jobs=deliveryJobs(t,home);
       else if(t.start==='returning') {t.lat=t.stop.lat;t.lng=t.stop.lng;jobs=[travel(PLANT,PLANT.name,{returning:true}),...cycleJobs(t,home)];}
       else if(t.start==='waiting') {t.lat=t.stop.lat;t.lng=t.stop.lng;jobs=[dwell(t.stop,'waiting',120,'North village staging stop'),travel(PLANT,PLANT.name,{returning:true}),...cycleJobs(t,home)];}
-      else {t.lat=t.stop.lat;t.lng=t.stop.lng;jobs=[dwell(t.stop,'delivering',t.fillMinutes,`${t.round} household`),travel(home,'Your household',{homeTarget:true}),dwell(home,'delivering',8,'Your household',{isHome:true}),travel(PLANT,PLANT.name,{returning:true})];}
+      else {t.lat=t.stop.lat;t.lng=t.stop.lng;jobs=[dwell(t.stop,'delivering',t.fillMinutes,`${t.round} household`),travel(home,householdLabel(t),{homeTarget:true}),dwell(home,'delivering',8,householdLabel(t),{isHome:true}),travel(PLANT,PLANT.name,{returning:true})];}
       const snap=router.snap(t);if(snap)[t.lat,t.lng]=snap.position;
       t.jobs=compile(t,jobs);t.initialized=true;
       advance(t,t.seedSeconds);
@@ -54,10 +56,10 @@
       const current=jobs[0];
       if(current?.isHome) {
         const changed=Math.abs(current.to.lat-home.lat)+Math.abs(current.to.lng-home.lng)>1e-8;
-        if(changed){current.isHome=false;current.label='Previous household';jobs.splice(1,0,travel(home,'Your household',{homeTarget:true}),dwell(home,'delivering',8,'Your household',{isHome:true}));}
+        if(changed){current.isHome=false;current.label='Previous household';jobs.splice(1,0,travel(home,householdLabel(t),{homeTarget:true}),dwell(home,'delivering',8,householdLabel(t),{isHome:true}));}
       }
       for(let i=0;i<jobs.length;i++) {
-        const j=jobs[i];if(j.homeTarget || (j.isHome && i>0))j.to={...home};
+        const j=jobs[i];if(j.homeTarget || (j.isHome && i>0)){j.to={...home};j.label=householdLabel(t);}
       }
       t.jobs=compile(t,jobs);
     }
@@ -72,14 +74,18 @@
     }
     return {distanceKm,seconds};
   }
-  function metrics(t) {
-    if(!t.initialized || t.blocked)return null;
+  function jobsToDelivery(t) {
     let jobs=t.jobs;
     // A returning truck is eligible on its next load, not as an empty truck.
     if(!jobs.some(j=>j.isHome)) {
       const last=jobs.at(-1),end=last?.route?.snappedEnd||last?.position||[t.lat,t.lng];
       jobs=[...jobs,...compile({...t,lat:end[0],lng:end[1]},cycleJobs(t,t.home))];
     }
+    return jobs;
+  }
+  function metrics(t) {
+    if(!t.initialized || t.blocked)return null;
+    const jobs=jobsToDelivery(t);
     let distanceKm=0,seconds=t.delaySeconds;
     for(const job of jobs) {
       if(job.isHome) {
@@ -138,6 +144,25 @@
   function remainingCoordinates(t) {
     const job=t.jobs[0];return job?.type==='travel'&&job.route?[[t.lat,t.lng],...job.route.legs.slice(job.legIndex).map(l=>l.to)]:[];
   }
-  const api={PLANT,INTAKE,HOME,createTrucks,planRoute,metrics,advance,activity,remainingCoordinates};
+
+  function deliveryPhase(t) {
+    const job=t?.jobs?.[0];
+    return job && ((job.type==='travel'&&!job.returning)||(job.type==='dwell'&&job.stage==='delivering'));
+  }
+  function projectedCoordinates(t,offline=false,lastReport=t) {
+    if(!t.assigned || !t.initialized || t.blocked || t.quality!=='good')return [];
+    if(offline && (!deliveryPhase(t)||!deliveryPhase(lastReport)))return [];
+    if(t.jobs[0]?.isHome)return [];
+    const coords=[[t.lat,t.lng]];
+    for(const job of jobsToDelivery(t)) {
+      if(job.isHome)return coords.length>1?coords:[];
+      if(job.type==='travel') {
+        if(!job.route)return [];
+        coords.push(...job.route.legs.slice(job.legIndex).map(leg=>leg.to));
+      }
+    }
+    return [];
+  }
+  const api={PLANT,INTAKE,HOME,createTrucks,planRoute,metrics,advance,activity,remainingCoordinates,projectedCoordinates};
   root.Delivery=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

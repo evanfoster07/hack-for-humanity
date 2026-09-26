@@ -16,7 +16,7 @@ The documented system is **river intake → heated pipeline → treatment/storag
 
 The six demonstration trucks start at distinct mapped road positions and in different stages: plant loading, household filling, outbound travel, return travel and a dispatch wait. Their illustrative shift starts are two hours apart; these are not measured municipal shifts or a claim about actual fleet size. One truck has a deliberate two-hour staging wait so reviewers can see a longer horizon.
 
-Trucks stay still during dwell tasks. They load at the plant, follow mapped roads to a round stop and the selected household, fill the tanks, return empty to the plant, wait, reload and repeat. A returning truck's ETA includes the next loading cycle. Re-pinning preserves a dwell already underway instead of teleporting the truck. Speed controls allow real time, 60× and 300× review; all clocks, stop timers and ETAs use the same demo time.
+Trucks stay still during dwell tasks. They load at the plant, follow mapped roads to their own round stops and assigned household tanks, fill the tanks, return empty to the plant, wait, reload and repeat. A returning truck's ETA includes the next loading cycle. Re-pinning preserves a dwell already underway instead of teleporting the truck. Speed controls allow real time, 60× and 300× review; all clocks, stop timers and ETAs use the same demo time.
 
 Timing assumptions:
 - Plant loading: 25–35 minutes per truck, centered on the requested 30-minute demo dwell. No Inukjuak-specific loading duration was verified.
@@ -28,7 +28,7 @@ The app labels activity as inferred from GPS position and time stopped. **All GP
 
 ## Offline and Bluetooth demonstration
 
-**Offline demo** freezes a timestamped last-online fleet snapshot and creates a separate forecast from it. Predictions advance along the saved routes and assumed stop schedule as demo time passes. The snapshot remains immutable, its age is displayed, and predicted arrivals are not reported as confirmed. The simulated online provider continues separately and is used again on reconnect. This is a deterministic demonstration, not an accuracy guarantee for real offline tracking.
+**Online / Offline**, next to the laptop/iPhone controls in the bottom bar, freezes a timestamped last-online fleet snapshot and creates a separate forecast from it. Predictions advance along the saved routes and assumed stop schedule as demo time passes. The snapshot remains immutable, its age is displayed, and predicted arrivals are not reported as confirmed. The simulated online provider continues separately and is used again on reconnect. This is a deterministic demonstration, not an accuracy guarantee for real offline tracking.
 
 While offline, changing the household pin, incident scenarios and restarting are unavailable so the forecast cannot invent newly received instructions. Existing alerts are last-known demo alerts. Actual browser offline events use the same forecast state. The page and local road snapshot must already be loaded: first-load offline caching and service workers are not implemented; map tiles still need the network.
 
@@ -36,7 +36,7 @@ While offline, changing the household pin, incident scenarios and restarting are
 
 ## Alerts and quality
 
-Demo controls include normal service, an eight-minute service delay, a collision stopping WT-104, and a quality hold stopping WT-218. Blocked trucks do not move and are excluded from the next-delivery estimate. No live GPS, incident, sensor, dispatch or booking service is connected. A truck sample never confirms household tank/tap safety.
+Demo controls include normal service, an eight-minute service delay, a collision stopping WT-104, and a quality hold stopping WT-218. Blocked trucks do not move and are excluded from the next-delivery estimate. No live GPS, incident, sensor, dispatch or booking service is connected. Green **Safe** and orange **Unsafe** are explicit simulated sample classifications, not thresholds calculated from the displayed sensor values or a real drinking-water assessment. Offline indicators turn red and quality cards say the status comes from the last update; current quality is unconfirmed.
 
 ## Geography and sources
 
@@ -56,3 +56,9 @@ node --test tests/*.test.js
 ```
 
 Tests cover routing, one-way roads, six distinct starting positions, dwell/arrival timing, repeated road-only rounds, blocked trucks, destination changes during an active delivery, immutable offline snapshots, reconnect and the non-operational Bluetooth button.
+
+## Household assignment and route visibility
+
+Exactly one available truck is assigned to the selected household (WT-512 initially). The other five serve distinct community tanks and are labeled “Other household”; they do not all drive to the user's pin. Assignment stays stable until the assigned truck becomes unavailable or cannot reach the destination, when a single reachable replacement is selected online. Offline mode never invents a new assignment. The list is sorted by road distance from current truck positions to the user's pin, independently of each truck's actual destination.
+
+Only the assigned truck's delivery path is drawn, ending at the household roadside stop. Online, the path can include scheduled stops and the next round after a return/refill. Offline, a dashed projected path is allowed only when both the last reported and currently predicted phases are travel to a household or household filling. No offline path is projected from a last-known loading, waiting, or returning phase. The line disappears once the truck reaches the selected household, instead of showing its return route as an incoming delivery. Selecting another truck opens details without drawing its route.

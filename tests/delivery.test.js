@@ -36,14 +36,26 @@ test('delays and blocked trucks do not move; delay is included in ETA',()=>{
  t.blocked=true;D.advance(t,300);assert.deepEqual([t.lat,t.lng],p);assert.equal(D.metrics(t),null);
 });
 test('location change preserves current dwell and road position; invalid pins invent no route',()=>{
- const t=fleet()[1],p=[t.lat,t.lng],elapsed=t.jobs[0].elapsedSeconds;
+ const t=fleet()[4],p=[t.lat,t.lng],elapsed=t.jobs[0].elapsedSeconds;
  assert.ok(D.planRoute(router,t,{lat:58.462,lng:-78.101}));assert.deepEqual([t.lat,t.lng],p);assert.equal(t.jobs[0].elapsedSeconds,elapsed);
  assert.equal(D.planRoute(router,t,{lat:43.7,lng:-79.4}),false);assert.equal(D.metrics(t),null);
  assert.ok(D.planRoute(router,t,D.HOME));
 });
 test('repinning during delivery finishes old tank before travelling to new household',()=>{
- const t=fleet()[0];D.advance(t,D.metrics(t).etaMinutes*60+.01);assert.ok(t.jobs[0].isHome);
+ const t=fleet()[4];D.advance(t,D.metrics(t).etaMinutes*60+.01);assert.ok(t.jobs[0].isHome);
  const p=[t.lat,t.lng],elapsed=t.jobs[0].elapsedSeconds;
  D.planRoute(router,t,{lat:58.462,lng:-78.101});assert.deepEqual([t.lat,t.lng],p);assert.equal(t.jobs[0].elapsedSeconds,elapsed);assert.equal(t.jobs[0].isHome,false);
  assert.ok(D.metrics(t).etaMinutes>8);D.advance(t,60);assert.deepEqual([t.lat,t.lng],p);
+});
+test('only one truck serves the selected home; other round destinations survive pin changes',()=>{
+ const trucks=fleet();assert.equal(trucks.filter(t=>t.assigned).length,1);
+ const pin={lat:58.462,lng:-78.101};
+ for(const t of trucks){D.planRoute(router,t,pin);assert.deepEqual(t.home,t.assigned?pin:t.communityHome);if(!t.assigned)assert.equal(D.projectedCoordinates(t).length,0);}
+});
+test('only assigned route is drawn and offline projection requires a household phase in last update',()=>{
+ const t=fleet()[4];assert.ok(D.projectedCoordinates(t).length>1);assert.ok(D.projectedCoordinates(t,true,t).length>1);
+ const lastLoading={jobs:[{type:'dwell',stage:'loading'}]};assert.equal(D.projectedCoordinates(t,true,lastLoading).length,0);
+ t.assigned=false;assert.equal(D.projectedCoordinates(t).length,0);t.assigned=true;
+ D.advance(t,D.metrics(t).etaMinutes*60+.01);assert.equal(D.projectedCoordinates(t).length,0,'already at selected home');
+ D.advance(t,481);assert.ok(t.jobs[0].returning);assert.equal(D.projectedCoordinates(t,true,t).length,0);assert.ok(D.projectedCoordinates(t).length>1,'online can display next round');
 });

@@ -31,3 +31,14 @@ test('offline mode keeps the saved destination and accelerated clock respects pa
  const before=run('demoTime');run('animate(1000)');assert.equal(run('demoTime'),before+60000);
  e.get('toggle-simulation').handlers.click();run('animate(2000)');assert.equal(run('demoTime'),before+60000);
 });
+test('assignment is exclusive and blocked assigned truck is replaced without redirecting the whole fleet',async()=>{
+ const {run}=await app();assert.equal(run('trucks.filter(t=>t.assigned).length'),1);
+ const old=run('trucks.find(t=>t.assigned).id');run('trucks.find(t=>t.assigned).blocked=true;assignDelivery();render();');
+ assert.equal(run('trucks.filter(t=>t.assigned).length'),1);assert.notEqual(run('trucks.find(t=>t.assigned).id'),old);
+ assert.equal(run('trucks.filter(t=>!t.assigned).every(t=>JSON.stringify(t.home)===JSON.stringify(t.communityHome))'),true);
+});
+test('safe/unsafe demo labels and offline last-update disclosure are explicit',async()=>{
+ const {elements:e,run}=await app();assert.match(e.get('delivery-quality').innerHTML,/Safe/);assert.match(e.get('delivery-quality').innerHTML,/SIMULATED/);
+ run("scenario='quality';applyScenario();showDetails('WT-218');");assert.match(e.get('detail-quality').innerHTML,/Unsafe/);assert.match(e.get('detail-quality').className,/quality-unsafe/);
+ e.get('offline-demo').handlers.click();assert.match(e.get('detail-quality').innerHTML,/status-dot offline/);assert.match(e.get('detail-quality').innerHTML,/based on the last update/);
+});

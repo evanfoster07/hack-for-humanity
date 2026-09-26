@@ -1,4 +1,4 @@
-const {PLANT,INTAKE,HOME,createTrucks,planRoute,metrics,advance,activity,remainingCoordinates}=Delivery;
+const {PLANT,INTAKE,HOME,createTrucks,planRoute,metrics,advance,activity,projectedCoordinates}=Delivery;
 const $=id=>document.getElementById(id);
 let trucks=createTrucks(),home={...HOME},router=null,selectedId=null,running=true,scenario='normal',alertTime=new Date();
 let offlineDemo=false,offlineActive=false,speed=1,demoTime=Date.now(),initialDemoTime=demoTime,lastOnlineTime=demoTime,onlineFleet=null,offlineSnapshot=null;
@@ -21,12 +21,29 @@ if(map) {
   map.on('click',e=>setHome(e.latlng.lat,e.latlng.lng));
   homeMarker.on('dragend',()=>{const p=homeMarker.getLatLng();setHome(p.lat,p.lng)});
 }
-function truckIcon(t) {return L.divIcon({className:`truck-marker ${t.blocked?'danger':t.delaySeconds?'caution':''}`,html:'🚚',iconSize:[38,38]});}
+function truckIcon(t) {return L.divIcon({className:`truck-marker ${t.assigned?'assigned-truck':''} ${t.blocked?'danger':t.delaySeconds?'caution':''}`,html:'🚚',iconSize:[38,38]});}
 function distance(km) {return km<1?`${Math.round(km*1000)} m`:`${km.toFixed(1)} km`;}
 function eta(t) {const m=metrics(t);return !m?'Unavailable':m.delivering?(offlineActive?'Predicted at stop':'Filling tank'):duration(m.etaMinutes*60);}
-function eligible() {return trucks.filter(t=>metrics(t)&&t.quality==='good').sort((a,b)=>metrics(a).etaMinutes-metrics(b).etaMinutes);}
-function quality(t) {return t?.quality==='good'?['good','● Truck sample available']:t?['caution','! Water quality recheck']:['unknown','? Quality not confirmed'];}
-function setQuality(el,t) {const [cls,label]=quality(t);el.className=`quality-indicator ${cls}`;el.textContent=label;}
+function eligible() {return trucks.filter(t=>t.assigned&&metrics(t)&&t.quality==='good');}
+function assignDelivery() {
+  if(offlineActive||!router)return;
+  const current=trucks.find(t=>t.assigned);
+  if(current&&metrics(current)&&current.quality==='good')return;
+  const candidates=trucks.filter(t=>!t.blocked&&t.quality==='good').map(t=>{
+    const candidate=cloneFleet([t])[0];candidate.assigned=true;planRoute(router,candidate,home);
+    return {truck:t,eta:metrics(candidate)?.etaMinutes??Infinity};
+  }).filter(c=>Number.isFinite(c.eta)).sort((a,b)=>a.eta-b.eta);
+  const selected=candidates[0]?.truck;
+  for(const t of trucks){const assigned=t===selected;if(t.assigned!==assigned){t.assigned=assigned;planRoute(router,t,home);}}
+}
+function nearbyDistance(t){return router?.route(t,home)?.distanceKm??Infinity;}
+
+function quality(t) {return t?.quality==='good'?['quality-safe','Safe']:t?['quality-unsafe','Unsafe']:['unknown','Not confirmed'];}
+function setQuality(el,t) {
+  const [cls,label]=quality(t);
+  el.className=`quality-indicator ${cls}`;
+  el.innerHTML=`<div class="quality-title"><span class="status-dot ${offlineActive?'offline':''}" aria-hidden="true"></span><strong>${label}</strong><span class="quality-demo">SIMULATED</span></div><small>${offlineActive?`Offline — based on the last update at ${timeLabel(lastOnlineTime)}. Current quality is unconfirmed.`:'Demo status only — not a drinking-water safety assessment.'}</small>`;
+}
 function render() {
   const next=eligible()[0];
   $('next-eta').textContent=next?eta(next):'No estimate';
@@ -34,24 +51,24 @@ function render() {
     const minutes=metrics(next).etaMinutes;
     const date=new Date(demoTime+minutes*60000);
     $('arrival-window').textContent=metrics(next).delivering?(offlineActive?'Predicted arrival · not confirmed':'At your roadside stop · filling inferred'):`${offlineActive?'Predicted around':'Around'} ${timeLabel(date.getTime())}${running?'':' · paused'}`;
-    $('next-truck').textContent=`${next.id} · ${activity(next).label}${next.delaySeconds?' · delay included':''}`;
+    $('next-truck').textContent=`${next.id} · Your assigned truck · ${activity(next).label}${next.delaySeconds?' · delay included':''}`;
   } else {$('arrival-window').textContent='Choose a pin near a local road';$('next-truck').textContent='No available truck can reach this destination';}
   setQuality($('delivery-quality'),next);$('next-details').disabled=!next;
   const list=$('truck-list');
-  const sorted=[...trucks].sort((a,b)=>(metrics(a)?.distanceKm??Infinity)-(metrics(b)?.distanceKm??Infinity));
+  const sorted=trucks.map(t=>({truck:t,km:nearbyDistance(t)})).sort((a,b)=>a.km-b.km).map(item=>item.truck);
   // Keep existing buttons stable while the simulation updates their text.
   for(const t of sorted) {
     let button=document.getElementById(`truck-${t.id}`);
     if(!button) {button=document.createElement('button');button.id=`truck-${t.id}`;button.type='button';button.addEventListener('click',()=>showDetails(t.id));}
     button.className=`truck-card${t.id===selectedId?' selected':''}`;
     const m=metrics(t),a=activity(t),tag=t.blocked?'On hold':t.delaySeconds?'Delayed':t.jobs[0]?.type==='dwell'?'Stopped':'Moving';
-    button.innerHTML=`<div class="truck-card-top"><strong>🚚 ${t.id}</strong><span class="chip ${t.blocked?'danger':t.delaySeconds||t.quality==='caution'?'caution':'good'}">${offlineActive?'~ ':''}${tag}</span></div><div class="truck-card-bottom"><span>${a.label.replace(' · inferred','').replace(' · planned','')}</span><strong>${t.quality==='caution'?'On hold':eta(t)}${m&&!m.delivering&&t.quality!=='caution'?' to you':''}</strong></div>`;
+    button.innerHTML=`<div class="truck-card-top"><strong>🚚 ${t.id}${t.assigned?' · Yours':''}</strong><span class="chip ${t.blocked?'danger':t.delaySeconds||t.quality==='caution'?'caution':'good'}">${offlineActive?'~ ':''}${tag}</span></div><div class="truck-card-bottom"><span>${a.label.replace(' · inferred','').replace(' · planned','')}</span><strong>${!t.assigned?'Other household':t.quality==='caution'?'On hold':eta(t)}${t.assigned&&m&&!m.delivering&&t.quality!=='caution'?' to you':''}</strong></div>`;
     list.appendChild(button);
     markers.get(t.id)?.setLatLng([t.lat,t.lng]);
-    const coords=remainingCoordinates(t);
-    const iconState=`${t.blocked}-${!!t.delaySeconds}-${t.jobs[0]?.type}`;
-    if(map && t.iconState!==iconState){markers.get(t.id).setIcon(truckIcon(t));t.iconState=iconState;}
-    routeLines.get(t.id)?.setLatLngs(coords).setStyle({opacity:t.id===selectedId ? .9 : .35,weight:t.id===selectedId?5:3});
+    const coords=projectedCoordinates(t,offlineActive,offlineSnapshot?.find(report=>report.id===t.id));
+    const iconState=`${t.assigned}-${t.blocked}-${!!t.delaySeconds}-${t.jobs[0]?.type}`;
+    if(map && t.iconState!==iconState){markers.get(t.id).setIcon(truckIcon(t)).bindTooltip(`${t.id}${t.assigned?' · Your delivery':''}`);t.iconState=iconState;}
+    routeLines.get(t.id)?.setLatLngs(coords).setStyle({opacity:.9,weight:5,dashArray:offlineActive?'8 8':null});
   }
   renderConnection();
   if($('truck-detail').open)renderDetails();
@@ -66,11 +83,11 @@ function renderDetails() {
   $('detail-remaining').textContent=a.remainingSeconds===null?'No completion estimate':`${duration(a.remainingSeconds)} ${job?.type==='travel'?'to next stop':'remaining (assumed)'}`;
   $('detail-provenance').textContent=offlineActive?`Projected from the last simulated GPS update at ${timeLabel(lastOnlineTime)} · ${elapsedDuration((demoTime-lastOnlineTime)/1000)} old. Arrivals and work are unconfirmed.`:'Activity inferred from simulated GPS position and time stopped; no loading or flow sensor is connected.';
   $('detail-shift').textContent=`Demo shift start: ${timeLabel(initialDemoTime-(t.shiftOffsetHours*3600+1800)*1000)} · starts staggered 2 hours apart`;
-  $('detail-arrival').textContent=t.quality==='caution'?'Delivery on hold pending recheck':`Estimated arrival: ${eta(t)}${t.delaySeconds?' · delay included':''}`;
+  $('detail-arrival').textContent=t.quality==='caution'?'Unsafe demo sample · delivery on hold':`${t.assigned?'Assigned to your household':'Serving another household'} · ${eta(t)}${t.delaySeconds?' · delay included':''}`;
   setQuality($('detail-quality'),t);
-  $('detail-action').textContent=t.quality==='good'?'A truck sample is available. Your household tank and tap still need a separate check.':'Truck held for a water sample recheck. Another available truck is used for your estimate.';
+  $('detail-action').textContent=t.quality==='good'?'Safe is a simulated sample status, not a conclusion from these sensor readings. Household tank and tap safety are not confirmed.':'Unsafe is a simulated sample status. This truck is held for a recheck and is not assigned to your delivery.';
   $('readings').innerHTML=['pH','Turbidity','Chlorine','Temperature'].map((label,i)=>`<div><span>${label}</span><strong>${t.readings[i]}</strong></div>`).join('');
-  $('detail-route').textContent=`${PLANT.name} → ${t.round} household → your tank → plant. Loading: ${t.loadMinutes} min; round stop: ${t.fillMinutes} min; your tank: 8 min. All dwell durations are assumptions. ${metrics(t)?distance(metrics(t).distanceKm)+' road travel before your next delivery.':''}`;
+  $('detail-route').textContent=`${PLANT.name} → ${t.round} household → ${t.assigned?'your tank':'community tank'} → plant. Loading: ${t.loadMinutes} min; round stop: ${t.fillMinutes} min; your tank: 8 min. All dwell durations are assumptions. ${metrics(t)?distance(metrics(t).distanceKm)+' road travel before its assigned delivery.':''}`;
 }
 function showDetails(id) {selectedId=id;renderDetails();render();$('truck-detail').showModal();}
 function setHome(lat,lng) {
@@ -79,7 +96,8 @@ function setHome(lat,lng) {
   home={lat,lng};homeMarker?.setLatLng([lat,lng]);
   $('location-name').textContent='Your selected location';
   for(const t of trucks)planRoute(router,t,home);
-  const route=trucks.map(metrics).find(Boolean);
+  assignDelivery();
+  const route=eligible().map(metrics).find(Boolean);
   $('route-message').textContent=route?`Location updated${route.endSnapMetres>8?` · delivery stops ${Math.round(route.endSnapMetres)} m away at the road`:''}.`:'No road access here. Choose a location closer to an Inukjuak road.';
   render();
 }
@@ -90,6 +108,7 @@ function applyScenario() {
   if(scenario==='delay')trucks[2].delaySeconds=8*60;
   if(scenario==='crash')trucks[0].blocked=true;
   if(scenario==='quality'){trucks[1].quality='caution';trucks[1].blocked=true;}
+  assignDelivery();
   alertTime=new Date(demoTime);renderAlerts();
   for(const t of trucks)if(map)markers.get(t.id).setIcon(truckIcon(t));
   render();
@@ -133,15 +152,17 @@ function setOfflineMode(){
   if(offline===offlineActive)return;
   offlineActive=offline;
   if(offline){lastOnlineTime=demoTime;offlineSnapshot=cloneFleet(trucks);onlineFleet=trucks;trucks=cloneFleet(offlineSnapshot);}
-  else {if(onlineFleet)trucks=onlineFleet;onlineFleet=null;offlineSnapshot=null;for(const t of trucks)if(router)planRoute(router,t,home);lastOnlineTime=demoTime;renderAlerts();}
+  else {if(onlineFleet)trucks=onlineFleet;onlineFleet=null;offlineSnapshot=null;for(const t of trucks)if(router)planRoute(router,t,home);lastOnlineTime=demoTime;assignDelivery();renderAlerts();}
   document.body.classList.toggle('offline-demo',offline);
   $('scenario').disabled=offline;$('reset-demo').disabled=offline;
   render();
 }
 function renderConnection(){
-  $('offline-demo').setAttribute('aria-pressed',String(offlineDemo));
-  $('offline-demo').textContent=offlineDemo?'Reconnect demo':'Offline demo';
-  $('data-mode').textContent=offlineActive?'Offline · predicted':'Simulated GPS · online';
+  $('offline-demo').setAttribute('aria-pressed',String(offlineActive));
+  $('offline-demo').setAttribute('aria-label',offlineActive?'Switch to online demo':'Switch to offline demo');
+  $('offline-demo').innerHTML=`<span class="status-dot ${offlineActive?'offline':''}" aria-hidden="true"></span>${offlineActive?'Offline':'Online'}`;
+  $('data-mode').innerHTML=`<span class="status-dot ${offlineActive?'offline':''}" aria-hidden="true"></span>${offlineActive?'Offline · last update':'Simulated GPS · online'}`;
+  $('map-key').textContent=offlineActive?'Dashed path = last-update estimate for your truck only.':'Highlighted path = your assigned truck only.';
   $('demo-clock').textContent=`${timeLabel(demoTime)} · ${speed}×`;
   $('prediction-status').textContent=offlineActive?`Last simulated GPS: ${timeLabel(lastOnlineTime)} (${elapsedDuration((demoTime-lastOnlineTime)/1000)} ago). Positions and timings are projected, not confirmed.`:'Simulated GPS updates · activities inferred from position and time stopped.';
   $('connection-status').textContent=offlineActive?'No new GPS received. Forecast follows the last known route and assumed stop durations.':'No live trackers connected. The six-truck fleet and GPS data are simulated.';
