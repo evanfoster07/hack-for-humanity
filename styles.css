@@ -674,3 +674,27 @@ footer {
     right: 10px;
   }
 }
+/* Destination and routing feedback */
+.destination-marker {
+  border: 0 !important;
+  background: transparent !important;
+  font-size: 30px;
+  line-height: 36px;
+  text-align: center;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+
+.route-message {
+  color: var(--navy);
+  font-weight: 700;
+}
+
+.route-note {
+  margin-top: 12px;
+}
+
+/* Keep the expanded route details usable on shorter screens. */
+.truck-detail {
+  max-height: calc(100% - 28px);
+  overflow-y: auto;
+}

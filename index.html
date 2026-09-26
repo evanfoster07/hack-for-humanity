@@ -45,7 +45,10 @@
         </div>
 
         <p id="location-message" class="helper">
-          Using a sample household location.
+          Using a sample household location. Click the map to drop a destination pin.
+        </p>
+        <p id="route-message" class="helper route-message" role="status" aria-live="polite">
+          Loading mapped roads...
         </p>
       </section>
 
@@ -62,6 +65,7 @@
 
           <div class="water-icon">💧</div>
         </div>
+        <p class="helper">ETAs follow roads. Trucks travel at 80% of mapped road limits; roads without a mapped limit use a 25 km/h demo assumption.</p>
       </section>
 
       <section class="card">
@@ -86,7 +90,7 @@
       <div class="legend">
         <span>
           <i class="legend-dot home"></i>
-          Your location
+          Destination pin
         </span>
 
         <span>
@@ -126,6 +130,16 @@
           </div>
 
           <div>
+            <span>Truck speed</span>
+            <strong id="detail-speed">--</strong>
+          </div>
+
+          <div>
+            <span>Road limit</span>
+            <strong id="detail-limit">--</strong>
+          </div>
+
+          <div>
             <span>Driver</span>
             <strong id="detail-driver">--</strong>
           </div>
@@ -135,6 +149,8 @@
             <strong id="detail-sampled">--</strong>
           </div>
         </div>
+
+        <p id="detail-route-note" class="helper route-note"></p>
 
         <div class="quality-panel">
           <span class="label">LATEST WATER QUALITY</span>
@@ -175,10 +191,11 @@
   </main>
 
   <footer>
-    Hack for Humanity prototype · All delivery and quality data is simulated.
+    Hack for Humanity prototype · Truck and quality data is simulated. Road geometry and mapped speed limits: OpenStreetMap contributors (2026-09-26 snapshot).
   </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="routing.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
