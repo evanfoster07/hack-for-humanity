@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,107 +17,125 @@
 
 <body>
   <header class="topbar">
-    <div>
-      <p class="eyebrow">Hack for Humanity · Demo</p>
-      <h1>Water Truck Tracker</h1>
-      <p class="subtitle">
-        See nearby water deliveries, estimated arrival times,
-        and the latest reported water quality.
-      </p>
+    <div class="brand">
+      <span class="brand-mark">W</span>
+
+      <div>
+        <p class="eyebrow">COMMUNITY WATER SERVICES</p>
+        <h1>Water Truck Tracker</h1>
+      </div>
     </div>
 
-    <span class="demo-pill">SIMULATED DATA</span>
+    <div class="live-status">
+      <span class="live-dot"></span>
+      <span>Live simulation</span>
+    </div>
   </header>
 
   <main class="app">
+
     <aside class="sidebar">
-      <section class="card">
-        <span class="label">YOUR LOCATION</span>
-        <h2 id="location-name">Demo household · Iqaluit, NU</h2>
 
-        <div class="button-row">
-          <button id="use-location" class="primary">
-            Use my location
-          </button>
+      <section class="location-strip">
+        <div class="location-icon">⌖</div>
 
-          <button id="reset-location">
-            Demo location
-          </button>
+        <div>
+          <span class="label">DEMO SERVICE AREA</span>
+          <h2 id="location-name">Iqaluit, Nunavut</h2>
+          <p id="location-message">
+            Household delivery point
+          </p>
         </div>
-
-        <p id="location-message" class="helper">
-          Using a sample household location.
-        </p>
       </section>
 
-      <section class="card delivery-card">
-        <span class="label">NEXT EXPECTED DELIVERY</span>
+      <section class="next-delivery">
+        <div class="section-top">
+          <span class="label">NEXT DELIVERY</span>
+          <span class="route-live">
+            <span></span>
+            ROUTING
+          </span>
+        </div>
 
-        <div class="delivery-row">
+        <div class="eta-row">
           <div>
-            <div id="next-eta" class="big-number">-- min</div>
-            <div id="next-truck" class="muted">
-              Calculating nearest truck...
-            </div>
+            <div id="next-eta" class="big-number">--</div>
+            <div class="eta-unit">minutes</div>
           </div>
 
-          <div class="water-icon">💧</div>
+          <div class="next-info">
+            <span id="next-truck">Finding nearest truck</span>
+            <small id="next-distance">-- away</small>
+          </div>
         </div>
       </section>
 
-      <section class="card">
+      <section class="truck-section">
+
         <div class="section-header">
           <div>
-            <span class="label">ACTIVE TRUCKS</span>
-            <h2>Nearby deliveries</h2>
+            <span class="label">DELIVERIES</span>
+            <h2>Active trucks</h2>
           </div>
 
-          <button id="toggle-simulation" class="text-button">
+          <button id="toggle-simulation" class="pause-button">
             Pause
           </button>
         </div>
 
         <div id="truck-list" class="truck-list"></div>
+
       </section>
+
     </aside>
 
     <section class="map-panel">
+
       <div id="map"></div>
 
+      <div class="map-controls">
+        <button id="reset-map" title="Reset map view">⌂</button>
+      </div>
+
+      <div class="map-label">
+        <strong>Iqaluit</strong>
+        <span>Water delivery network</span>
+      </div>
+
       <div class="legend">
-        <span>
+        <div>
           <i class="legend-dot home"></i>
-          Your location
-        </span>
+          Service point
+        </div>
 
-        <span>
-          <i class="legend-dot good"></i>
-          Quality OK
-        </span>
-
-        <span>
-          <i class="legend-dot caution"></i>
-          Check advised
-        </span>
+        <div>
+          <i class="legend-line"></i>
+          Delivery route
+        </div>
       </div>
 
       <article id="truck-detail" class="truck-detail">
+
         <button id="close-detail" class="close-button">×</button>
 
         <div class="detail-header">
+
           <div>
             <span class="label">DELIVERY TRUCK</span>
             <h2 id="detail-name">Truck</h2>
+            <span id="detail-id" class="truck-id">WT-000</span>
           </div>
 
           <span id="detail-status" class="quality-badge">
             --
           </span>
+
         </div>
 
         <div class="detail-grid">
+
           <div>
-            <span>Estimated arrival</span>
+            <span>Arrival</span>
             <strong id="detail-eta">--</strong>
           </div>
 
@@ -134,16 +153,24 @@
             <span>Last sample</span>
             <strong id="detail-sampled">--</strong>
           </div>
+
         </div>
 
         <div class="quality-panel">
-          <span class="label">LATEST WATER QUALITY</span>
 
-          <h3 id="quality-summary">
-            --
-          </h3>
+          <div class="quality-header">
+            <div>
+              <span class="label">WATER QUALITY</span>
+              <h3 id="quality-summary">--</h3>
+            </div>
+
+            <div class="quality-check">
+              ✓
+            </div>
+          </div>
 
           <div class="reading-grid">
+
             <div>
               <span>pH</span>
               <strong id="reading-ph">--</strong>
@@ -163,22 +190,28 @@
               <span>Temperature</span>
               <strong id="reading-temp">--</strong>
             </div>
+
           </div>
 
-          <p class="helper">
-            Prototype readings only. Real deployment would use validated
-            sensors and official water-quality guidance.
+          <p>
+            Prototype readings. Production deployment would use
+            validated sensors and official water-quality guidance.
           </p>
+
         </div>
+
       </article>
+
     </section>
+
   </main>
 
   <footer>
-    Hack for Humanity prototype · All delivery and quality data is simulated.
+    Simulated delivery network · Prototype
   </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
+```
