@@ -21,12 +21,6 @@ All GPS data, sensor readings and incidents are simulated. Stop durations are as
 
 ## Run
 
-```sh
-python -m http.server 8000
-```
-
-Open http://localhost:8000/. Demo controls include accelerated playback.
-
-Tests: `node --test tests/*.test.js`
+link: https://evanfoster07.github.io/hack-for-humanity/
 
 Road data: © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright).
