@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Water Truck Tracker</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Hack for Humanity · Demo</p>
+      <h1>Water Truck Tracker</h1>
+      <p class="subtitle">
+        See nearby water deliveries, estimated arrival times,
+        and the latest reported water quality.
+      </p>
+    </div>
+
+    <span class="demo-pill">SIMULATED DATA</span>
+  </header>
+
+  <main class="app">
+    <aside class="sidebar">
+      <section class="card">
+        <span class="label">YOUR LOCATION</span>
+        <h2 id="location-name">Demo household · Iqaluit, NU</h2>
+
+        <div class="button-row">
+          <button id="use-location" class="primary">
+            Use my location
+          </button>
+
+          <button id="reset-location">
+            Demo location
+          </button>
+        </div>
+
+        <p id="location-message" class="helper">
+          Using a sample household location.
+        </p>
+      </section>
+
+      <section class="card delivery-card">
+        <span class="label">NEXT EXPECTED DELIVERY</span>
+
+        <div class="delivery-row">
+          <div>
+            <div id="next-eta" class="big-number">-- min</div>
+            <div id="next-truck" class="muted">
+              Calculating nearest truck...
+            </div>
+          </div>
+
+          <div class="water-icon">💧</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-header">
+          <div>
+            <span class="label">ACTIVE TRUCKS</span>
+            <h2>Nearby deliveries</h2>
+          </div>
+
+          <button id="toggle-simulation" class="text-button">
+            Pause
+          </button>
+        </div>
+
+        <div id="truck-list" class="truck-list"></div>
+      </section>
+    </aside>
+
+    <section class="map-panel">
+      <div id="map"></div>
+
+      <div class="legend">
+        <span>
+          <i class="legend-dot home"></i>
+          Your location
+        </span>
+
+        <span>
+          <i class="legend-dot good"></i>
+          Quality OK
+        </span>
+
+        <span>
+          <i class="legend-dot caution"></i>
+          Check advised
+        </span>
+      </div>
+
+      <article id="truck-detail" class="truck-detail">
+        <button id="close-detail" class="close-button">×</button>
+
+        <div class="detail-header">
+          <div>
+            <span class="label">DELIVERY TRUCK</span>
+            <h2 id="detail-name">Truck</h2>
+          </div>
+
+          <span id="detail-status" class="quality-badge">
+            --
+          </span>
+        </div>
+
+        <div class="detail-grid">
+          <div>
+            <span>Estimated arrival</span>
+            <strong id="detail-eta">--</strong>
+          </div>
+
+          <div>
+            <span>Distance</span>
+            <strong id="detail-distance">--</strong>
+          </div>
+
+          <div>
+            <span>Driver</span>
+            <strong id="detail-driver">--</strong>
+          </div>
+
+          <div>
+            <span>Last sample</span>
+            <strong id="detail-sampled">--</strong>
+          </div>
+        </div>
+
+        <div class="quality-panel">
+          <span class="label">LATEST WATER QUALITY</span>
+
+          <h3 id="quality-summary">
+            --
+          </h3>
+
+          <div class="reading-grid">
+            <div>
+              <span>pH</span>
+              <strong id="reading-ph">--</strong>
+            </div>
+
+            <div>
+              <span>Turbidity</span>
+              <strong id="reading-turbidity">--</strong>
+            </div>
+
+            <div>
+              <span>Chlorine</span>
+              <strong id="reading-chlorine">--</strong>
+            </div>
+
+            <div>
+              <span>Temperature</span>
+              <strong id="reading-temp">--</strong>
+            </div>
+          </div>
+
+          <p class="helper">
+            Prototype readings only. Real deployment would use validated
+            sensors and official water-quality guidance.
+          </p>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    Hack for Humanity prototype · All delivery and quality data is simulated.
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
