@@ -1,7 +1,7 @@
 const DEMO_HOME = {
-  lat: 63.7467,
-  lng: -68.5170,
-  label: "Demo household · Iqaluit, NU"
+  lat: 58.4540,
+  lng: -78.1010,
+  label: "Demo household · Inukjuak, Nunavik"
 };
 
 // Everything here is simulated for the prototype.
@@ -10,18 +10,18 @@ const trucks = [
     id: "WT-104",
     driver: "Alex N.",
 
-    lat: 63.7508,
-    lng: -68.5035,
+    lat: 58.4580,
+    lng: -78.0950,
 
     speedKmh: 26,
 
     quality: "good",
-    qualityLabel: "Quality OK",
+    qualityLabel: "Sample available",
 
     qualitySummary:
-      "Latest sample within demo targets",
+      "Truck sample available · household unchecked",
 
-    sampled: "12 min ago",
+    sampled: "12 min before demo start",
 
     ph: "7.2",
     turbidity: "0.4 NTU",
@@ -33,8 +33,8 @@ const trucks = [
     id: "WT-218",
     driver: "Jordan T.",
 
-    lat: 63.7394,
-    lng: -68.5420,
+    lat: 58.4490,
+    lng: -78.1080,
 
     speedKmh: 22,
 
@@ -44,7 +44,7 @@ const trucks = [
     qualitySummary:
       "Turbidity flagged for recheck",
 
-    sampled: "19 min ago",
+    sampled: "19 min before demo start",
 
     ph: "7.0",
     turbidity: "4.2 NTU",
@@ -56,18 +56,18 @@ const trucks = [
     id: "WT-337",
     driver: "Morgan K.",
 
-    lat: 63.7563,
-    lng: -68.5340,
+    lat: 58.4610,
+    lng: -78.1060,
 
     speedKmh: 28,
 
     quality: "good",
-    qualityLabel: "Quality OK",
+    qualityLabel: "Sample available",
 
     qualitySummary:
-      "Latest sample within demo targets",
+      "Truck sample available · household unchecked",
 
-    sampled: "7 min ago",
+    sampled: "7 min before demo start",
 
     ph: "7.4",
     turbidity: "0.7 NTU",
@@ -88,15 +88,15 @@ let simulationRunning = true;
    MAP
 ---------------------------------- */
 
-const map = L.map("map").setView(
+const map = typeof L !== "undefined" ? L.map("map").setView(
   [
     DEMO_HOME.lat,
     DEMO_HOME.lng
   ],
   14
-);
+) : null;
 
-L.tileLayer(
+if (map) L.tileLayer(
   "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   {
     maxZoom: 19,
@@ -110,13 +110,13 @@ L.tileLayer(
    HOME MARKER
 ---------------------------------- */
 
-const homeIcon = L.divIcon({
+const homeIcon = map ? L.divIcon({
   className: "home-marker",
 
   iconSize: [18, 18]
-});
+}) : null;
 
-const homeMarker = L.marker(
+const homeMarker = map ? L.marker(
   [
     home.lat,
     home.lng
@@ -129,8 +129,8 @@ const homeMarker = L.marker(
 )
   .addTo(map)
   .bindPopup(
-    "<strong>Your location</strong>"
-  );
+    "<strong>Demo household · Inukjuak</strong>"
+  ) : null;
 
 /* ---------------------------------
    TRUCK MARKERS
@@ -151,7 +151,7 @@ function createTruckIcon(
   });
 }
 
-for (const truck of trucks) {
+for (const truck of map ? trucks : []) {
   const marker = L.marker(
     [
       truck.lat,
@@ -386,7 +386,9 @@ function renderNextDelivery() {
   document.getElementById(
     "next-eta"
   ).textContent =
-    `~${eta} min`;
+    `~${eta}`;
+
+  document.getElementById("next-distance").textContent = `${formatDistance(getTruckMetrics(nearest).distance)} away · straight-line estimate`;
 
   document.getElementById(
     "next-truck"
@@ -432,6 +434,9 @@ function selectTruck(
     document.getElementById(
       "detail-status"
     );
+
+  document.getElementById("quality-icon").textContent = truck.quality === "caution" ? "!" : "i";
+  document.getElementById("quality-icon").className = `quality-check ${truck.quality}`;
 
   status.textContent =
     truck.qualityLabel;
@@ -497,8 +502,7 @@ function selectTruck(
       id
     );
 
-  marker
-    .bindPopup(`
+  marker?.bindPopup(`
       <strong>
         ${truck.id}
       </strong>
@@ -520,7 +524,7 @@ function selectTruck(
     .openPopup();
 
   if (panToTruck) {
-    map.panTo(
+    map?.panTo(
       [
         truck.lat,
         truck.lng
@@ -541,7 +545,7 @@ function closeTruckDetails() {
     "open"
   );
 
-  map.closePopup();
+  map?.closePopup();
 
   renderTruckList();
 }
@@ -561,14 +565,14 @@ function updateHome(
     label
   };
 
-  homeMarker.setLatLng(
+  homeMarker?.setLatLng(
     [
       lat,
       lng
     ]
   );
 
-  homeMarker.setPopupContent(
+  homeMarker?.setPopupContent(
     `<strong>${label}</strong>`
   );
 
@@ -615,7 +619,7 @@ function useMyLocation() {
         "Your current location"
       );
 
-      map.setView(
+      map?.setView(
         [
           home.lat,
           home.lng
@@ -624,7 +628,7 @@ function useMyLocation() {
       );
 
       message.textContent =
-        "Using your current location. Demo trucks are still located in Iqaluit.";
+        "Using your current location. Demo trucks are still located in Inukjuak.";
     },
 
     () => {
@@ -647,7 +651,7 @@ function resetDemoLocation() {
     DEMO_HOME.label
   );
 
-  map.setView(
+  map?.setView(
     [
       DEMO_HOME.lat,
       DEMO_HOME.lng
@@ -708,7 +712,7 @@ function updateTruckSimulation() {
           truck.id
         );
 
-      marker.setLatLng(
+      marker?.setLatLng(
         [
           truck.lat,
           truck.lng
@@ -773,14 +777,14 @@ function toggleSimulation() {
 
 document.getElementById(
   "use-location"
-).addEventListener(
+)?.addEventListener(
   "click",
   useMyLocation
 );
 
 document.getElementById(
   "reset-location"
-).addEventListener(
+)?.addEventListener(
   "click",
   resetDemoLocation
 );
@@ -818,3 +822,22 @@ setInterval(
   updateTruckSimulation,
   2500
 );
+// Keep the household and truck information usable when the map CDN is unavailable.
+document.getElementById("reset-map").addEventListener("click", resetDemoLocation);
+const mapToggle = document.getElementById("toggle-map");
+function setTextView(enabled) {
+  document.body.classList.toggle("text-view", enabled);
+  mapToggle.setAttribute("aria-pressed", String(enabled));
+  mapToggle.textContent = enabled ? "Show map view" : "Use text-only view";
+  if (!enabled) map?.invalidateSize();
+}
+mapToggle.addEventListener("click", () => setTextView(!document.body.classList.contains("text-view")));
+function updateConnectionStatus() {
+  document.getElementById("connection-status").textContent = navigator.onLine
+    ? "Demo data on this device; no live service connected."
+    : "Offline · showing simulated data, not live truck locations.";
+}
+window.addEventListener("online", updateConnectionStatus);
+window.addEventListener("offline", updateConnectionStatus);
+updateConnectionStatus();
+if (!map) setTextView(true);
