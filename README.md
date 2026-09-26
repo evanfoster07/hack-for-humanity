@@ -1,6 +1,6 @@
 # Water Truck Tracker · Inukjuak
 
-A simplified household delivery prototype based on Amenda Soucy's H4H challenge. Integrates the road router, destination pin and road-based movement from `hamza` (7b394f5), replacing its Iqaluit snapshot with Inukjuak roads. Keeps the laptop/iPhone preview switch.
+A household delivery prototype based on Amenda Soucy's H4H challenge. Integrates `hamza`'s local road router and pin selection with Inukjuak geography, six simulated trucks, activity timers, alerts, offline forecasting and laptop/iPhone previews.
 
 ## Run
 
@@ -8,22 +8,46 @@ A simplified household delivery prototype based on Amenda Soucy's H4H challenge.
 python -m http.server 8000
 ```
 
-Open http://localhost:8000/. Choose a location by clicking the map or dragging the home pin. ETAs and road routes recalculate from current truck positions. The nearest road is used within 300 metres; pins outside the road network show no estimate. Use **Choose on map** on the phone layout to scroll to the map.
+Open http://localhost:8000/. Tap the map or drag the home pin to recalculate road routes and delivery estimates. Unreachable pins produce no estimate. Select a truck to see its activity, elapsed stop time, assumed remaining time, quality details and timing sources.
 
-The main screen shows the earliest available water delivery, trucks sorted by remaining road distance (including scheduled stops), and a text-and-colour water quality indicator. Quality details open on request. A truck sample never confirms household tank/tap safety.
+## Water process and truck activities
 
-The **Alerts** tab displays explicit demo service updates. Demo controls let reviewers select normal service, an eight-minute loading delay, a collision that stops WT-104, or a quality hold that stops WT-218. Unavailable trucks are excluded from the next-delivery estimate. Restart restores the initial fleet and destination. No live incident feed, sensor, dispatch or booking service is connected.
+The documented system is **river intake → heated pipeline → treatment/storage → truck loading → household tank**. Trucks do not normally visit the raw-water intake or pipeline. These upstream stages are shown separately; their process durations are unknown and cannot be inferred from delivery-truck GPS.
 
-## Real geography, simulated service
+The six demonstration trucks start at distinct mapped road positions and in different stages: plant loading, household filling, outbound travel, return travel and a dispatch wait. Their illustrative shift starts are two hours apart; these are not measured municipal shifts or a claim about actual fleet size. One truck has a deliberate two-hour staging wait so reviewers can see a longer horizon.
 
-- Real source: Inukjuak Water Treatment Plant, OpenStreetMap way [493122694](https://www.openstreetmap.org/way/493122694), approximately 58.457888, -78.104030. Only one local plant was verified; additional distant plants have not been invented. Plant-to-road departure is snapped to the mapped access road.
-- Trucks originate at that facility and are initialized at different points along south village, airport road and west village rounds. Those rounds, stops, sample values and schedules are illustrative, not municipal dispatch routes.
-- `roads.json` is an OpenStreetMap API snapshot fetched 2026-09-26, bounds `-78.16,58.42,-78.04,58.51`. Geometry © OpenStreetMap contributors, [ODbL](https://www.openstreetmap.org/copyright). Non-drivable highway types and ways tagged with prohibited/private motor vehicle access are excluded.
-- Routing uses mapped one-way directions and 80% of mapped speed limits, or 20 km/h when no limit is mapped. Estimates include three-minute scheduled stops and active scenario delays. Road conditions, turn restrictions, conditional access and actual truck restrictions are not validated; this is not a navigation system.
-- Routes end at the roadside; any offset from the household pin is disclosed. Truck positions advance only along road segments. Pausing pauses the simulated movement and delay countdown; restarting resets the demonstration.
-- [Kativik Regional Government's Inukjuak intake vulnerability report](https://www.krg.ca/iu/assets/environment/drinking_water_report6.pdf) documents the treatment plant and truck-based distribution context.
+Trucks stay still during dwell tasks. They load at the plant, follow mapped roads to a round stop and the selected household, fill the tanks, return empty to the plant, wait, reload and repeat. A returning truck's ETA includes the next loading cycle. Re-pinning preserves a dwell already underway instead of teleporting the truck. Speed controls allow real time, 60× and 300× review; all clocks, stop timers and ETAs use the same demo time.
 
-Routing runs locally after loading the bundled snapshot, without sending household pins to a routing service. Leaflet and map tiles need internet access on first load. Text-only view works when the map library is unavailable; full offline startup is not implemented.
+Timing assumptions:
+- Plant loading: 25–35 minutes per truck, centered on the requested 30-minute demo dwell. No Inukjuak-specific loading duration was verified.
+- Household stops: 6–10 minutes, including an 8-minute stop at the selected home. APTN eyewitness reporting describes household fills taking a few minutes in nearby Puvirnituq; exact durations here are assumptions, not transferred local measurements.
+- Plant dispatch queue: 10 minutes; one initial staging wait: 120 minutes. Both are synthetic demo scheduling choices.
+- Travel: 80% of mapped speed limits, or 20 km/h if no usable limit exists.
+
+The app labels activity as inferred from GPS position and time stopped. **All GPS-style data is generated by the simulation.** Time stopped is an observation the model could derive from real GPS reports; activity labels and completion countdowns are inferences/plans. GPS alone cannot establish filling, treatment completion, water volume or drinking-water safety.
+
+## Offline and Bluetooth demonstration
+
+**Offline demo** freezes a timestamped last-online fleet snapshot and creates a separate forecast from it. Predictions advance along the saved routes and assumed stop schedule as demo time passes. The snapshot remains immutable, its age is displayed, and predicted arrivals are not reported as confirmed. The simulated online provider continues separately and is used again on reconnect. This is a deterministic demonstration, not an accuracy guarantee for real offline tracking.
+
+While offline, changing the household pin, incident scenarios and restarting are unavailable so the forecast cannot invent newly received instructions. Existing alerts are last-known demo alerts. Actual browser offline events use the same forecast state. The page and local road snapshot must already be loaded: first-load offline caching and service workers are not implemented; map tiles still need the network.
+
+**Get latest data via Bluetooth** is a UI placeholder. Clicking explains that no transfer took place. It does not call a Bluetooth API, request permissions, connect to another device, or refresh the last-online timestamp.
+
+## Alerts and quality
+
+Demo controls include normal service, an eight-minute service delay, a collision stopping WT-104, and a quality hold stopping WT-218. Blocked trucks do not move and are excluded from the next-delivery estimate. No live GPS, incident, sensor, dispatch or booking service is connected. A truck sample never confirms household tank/tap safety.
+
+## Geography and sources
+
+- [KRG Inukjuak intake vulnerability report, January 2025](https://www.krg.ca/iu/assets/environment/drinking_water_report6.pdf): river intake, 3 km heated pipeline, treatment and truck distribution. Intake coordinates from Table 1: 58°28′01.36″ N, 78°04′03.94″ W. The intake marker is contextual, not a truck destination. No pipeline geometry is invented.
+- [Inukjuak Water Treatment Plant, OSM way 493122694](https://www.openstreetmap.org/way/493122694): approximately 58.457888, -78.104030. Truck departures snap to the mapped access road. Only one verified local plant is modeled.
+- [APTN, Pipe Dreams, November 10, 2025](https://www.aptnnews.ca/investigates/pipe-dreams-the-water-crisis-in-nunavik/): eyewitness context for household filling in Puvirnituq, not measured Inukjuak timing data.
+- `roads.json`: OpenStreetMap API snapshot fetched 2026-09-26, bounds `-78.16,58.42,-78.04,58.51`. Geometry © OpenStreetMap contributors, [ODbL](https://www.openstreetmap.org/copyright). Non-drivable ways and prohibited/private motor-vehicle access are excluded.
+
+Round stops, staging points, schedules, shift histories and sample values are illustrative. Roads use mapped one-way directions; turn restrictions, conditional access, road conditions and actual truck restrictions are not validated. Routes end at the nearest roadside within 300 metres of a pin. This is not a navigation system.
+
+Routing runs locally, without sending household pins to a routing service. Leaflet and map tiles need internet on first load; text-only mode works if the map library fails to load.
 
 ## Checks
 
@@ -31,4 +55,4 @@ Routing runs locally after loading the bundled snapshot, without sending househo
 node --test tests/*.test.js
 ```
 
-Tests cover road continuity, speed assumptions, one-way routing, off-network destinations, separated rounds, on-road movement, delay/dwell accounting, blocked trucks and rerouting from current positions.
+Tests cover routing, one-way roads, six distinct starting positions, dwell/arrival timing, repeated road-only rounds, blocked trucks, destination changes during an active delivery, immutable offline snapshots, reconnect and the non-operational Bluetooth button.
