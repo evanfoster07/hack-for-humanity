@@ -841,3 +841,17 @@ window.addEventListener("online", updateConnectionStatus);
 window.addEventListener("offline", updateConnectionStatus);
 updateConnectionStatus();
 if (!map) setTextView(true);
+
+// Resize the actual app container so the phone preview uses a compact layout.
+function setDevicePreview(device) {
+  const phone = device === "iphone";
+  document.body.classList.toggle("iphone-preview", phone);
+  document.getElementById("laptop-view").setAttribute("aria-pressed", String(!phone));
+  document.getElementById("iphone-view").setAttribute("aria-pressed", String(phone));
+  document.getElementById("preview-label").textContent = phone
+    ? "iPhone preview · 390px" : "Laptop preview";
+  // Leaflet must measure its new container after layout has updated.
+  requestAnimationFrame(() => map?.invalidateSize({ pan: false }));
+}
+document.getElementById("laptop-view").addEventListener("click", () => setDevicePreview("laptop"));
+document.getElementById("iphone-view").addEventListener("click", () => setDevicePreview("iphone"));

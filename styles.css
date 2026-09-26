@@ -796,3 +796,53 @@ button:focus-visible, summary:focus-visible { outline: 3px solid var(--blue); ou
   .text-view .map-panel { min-height: 0; }
   footer { height: auto; min-height: 30px; padding: 10px; text-align: center; }
 }
+
+/* Device preview controls stay outside the independently scrolling app. */
+body, body.text-view { overflow: hidden; }
+.device-preview { container-type: inline-size; width: 100%; height: calc(100dvh - 68px); overflow: auto; background: var(--bg); }
+.app { height: calc(100dvh - 170px); }
+.view-switcher { position: fixed; inset: auto 0 0; height: 68px; padding: 8px 16px; display: flex; align-items: center; justify-content: center; gap: 20px; background: #fff; border-top: 1px solid var(--border); z-index: 2000; }
+.view-switcher > span { font-size: 12px; color: #555; }
+.view-options { display: flex; gap: 4px; background: #eeeef1; border-radius: 12px; padding: 4px; }
+.view-options button { min-height: 44px; min-width: 85px; border: 0; border-radius: 9px; background: transparent; color: #555; font: inherit; font-size: 13px; cursor: pointer; }
+.view-options button[aria-pressed="true"] { background: #172b41; color: #fff; box-shadow: 0 2px 5px #0002; }
+.iphone-preview { background: #dce2e9; }
+.iphone-preview .device-preview { width: min(390px, 100%); height: calc(100dvh - 92px); margin: 12px auto; border-radius: 26px; border: 1px solid #bac4cf; box-shadow: 0 12px 40px #172b4126; }
+@container (max-width: 600px) {
+  .topbar { height: auto; min-height: 64px; padding: 12px; gap: 8px; }
+  .brand { gap: 8px; }
+  .brand-mark { width: 30px; height: 30px; flex-shrink: 0; }
+  .eyebrow { font-size: 8px; letter-spacing: .07em; }
+  .topbar h1 { font-size: 16px; line-height: 1.2; }
+  .live-status { font-size: 10px; gap: 6px; max-width: 64px; }
+  .live-dot { flex-shrink: 0; }
+  .app { display: flex; flex-direction: column; height: auto; }
+  .sidebar { padding: 10px; overflow: visible; border: 0; }
+  .location-strip, .next-delivery, .truck-section, .household-panel, .connection-panel { padding: 12px; border-radius: 12px; margin-bottom: 8px; }
+  .location-strip { gap: 8px; }
+  .location-strip h2 { font-size: 14px; }
+  .household-panel h2 { font-size: 17px; margin: 7px 0; }
+  .household-panel p, .connection-panel p { margin: 8px 0; line-height: 1.45; }
+  .eta-row { margin-top: 10px; }
+  .big-number { font-size: 34px; }
+  .section-header { margin-bottom: 8px; }
+  .truck-card { padding: 10px; gap: 7px; }
+  .pause-button, summary { min-height: 44px; }
+  .map-panel { min-height: 0; overflow: visible; padding: 0 10px 10px; }
+  #map { height: 260px; border-radius: 12px; }
+  .map-label { top: 10px; left: 20px; }
+  .map-controls { top: 10px; right: 20px; }
+  .legend { display: none; }
+  .truck-detail, .text-view .truck-detail { position: relative; width: 100%; right: auto; bottom: auto; margin: 10px 0 0; padding: 16px; }
+  .truck-detail.open { max-height: none; overflow: visible; }
+  .detail-header { padding-right: 32px; gap: 8px; }
+  .detail-header h2 { font-size: 19px; }
+  .close-button { width: 32px; height: 32px; }
+  .quality-badge { white-space: normal; }
+  footer { height: auto; min-height: 36px; padding: 8px 16px; text-align: center; line-height: 1.5; }
+}
+@media (max-width: 420px) {
+  .view-switcher { gap: 10px; padding-inline: 8px; }
+  .view-switcher > span { font-size: 10px; }
+  .view-options button { min-width: 72px; }
+}

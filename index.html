@@ -15,6 +15,7 @@
 </head>
 
 <body>
+  <div id="device-preview" class="device-preview">
   <header class="topbar">
     <div class="brand">
       <span class="brand-mark">W</span>
@@ -232,6 +233,15 @@
   <footer>
     Inukjuak concept · Simulated data · Inspired by the H4H household water challenge
   </footer>
+  </div>
+
+  <nav class="view-switcher" aria-label="Preview device">
+    <span id="preview-label" role="status">Laptop preview</span>
+    <div class="view-options">
+      <button type="button" id="laptop-view" aria-pressed="true" aria-controls="device-preview">Laptop</button>
+      <button type="button" id="iphone-view" aria-pressed="false" aria-controls="device-preview">iPhone</button>
+    </div>
+  </nav>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="app.js"></script>
