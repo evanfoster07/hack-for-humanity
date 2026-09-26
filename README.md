@@ -19,16 +19,6 @@ A six-truck simulation with road routing, loading/delivery stops, one truck assi
 
 **All GPS data, sensor readings and incidents are simulated.** Stop durations are assumptions, not measured local averages. Green **Safe** and orange **Unsafe** demonstrate the interface; they are not real safety assessments. Live hardware, validated quality reporting and Bluetooth transfer still need to be built and tested.
 
-## Presentation order
-
-1. Pick a home and show its assigned truck and ETA.
-2. Open the truck: activity, time stopped and water readings.
-3. Switch offline: show the last-update timestamp and projected route.
-4. Point out the Bluetooth idea without claiming it works.
-5. Reconnect and trigger a delay or quality hold under **Demo controls**.
-
-**Next step:** Test with drivers, residents and water operators—measure ETA accuracy, validate sensor reporting and confirm the system can be maintained locally.
-
 ## Run
 
 ```sh
